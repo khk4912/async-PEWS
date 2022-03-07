@@ -10,4 +10,5 @@ class HTTP:
                     content = await r.content.read()
                     return content, r.headers
                 else:
+                    print(url)
                     raise Exception(f"HTTP Error: {r.status}")

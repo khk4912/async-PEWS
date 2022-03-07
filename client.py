@@ -17,7 +17,7 @@ from constant import (
     TIDE,
     TZ_MSEC,
 )
-from model import Station
+from model import EEWInfo, Station
 
 
 class PEWSClient:
@@ -86,8 +86,8 @@ class PEWSClient:
         return mmi_data
 
     def _eqk_handler(self, data: str, buffer: list[int]):
-        self._origin_lat = 30 + int(data[0:10], 2) / 100
-        self._origin_lon = 120 + int(data[10:20], 2) / 100
+        self.origin_lat = 30 + int(data[0:10], 2) / 100
+        self.origin_lon = 120 + int(data[10:20], 2) / 100
         self.eqk_mag = int(data[20:27], 2) / 10
         self.eqk_dep = int(data[27:37], 2) / 10
         self.eqk_time = int(str(int(data[37:69], 2)) + "000")
@@ -104,10 +104,10 @@ class PEWSClient:
         else:
             self.eqk_max_area.append("-")
 
-        eqk_str = unquote(
+        self.eqk_str = unquote(
             quote("".join([chr(x) for x in buffer]), encoding="raw_unicode_escape")
         ).strip()
-        eqk_sea = eqk_str.find("해역") != -1
+        self.eqk_sea = self.eqk_str.find("해역") != -1
 
     def _parse_eqk_id(self, data: str) -> str:
         return "" if not data else "20" + str(int(data[69:95], 2))
@@ -141,7 +141,7 @@ class PEWSClient:
 
     async def get_MMI(self, url: str):
         send_time = self._time
-        array_buffer, headers = await HTTP.get(url)
+        array_buffer, headers = await HTTP.get(f"{url}.b")
         byte_array = list(array_buffer)
 
         if self._bSync:
@@ -149,10 +149,10 @@ class PEWSClient:
             dTime = int(headers["ST"].replace(".", ""))
             if self._tide == DELAY or receive_time - send_time < 100:
                 self._tide = self._time - dTime + DELAY
-            self._logger.info(f"서버 시간과 동기화됨 ({headers['Date']})")
-            self._logger.info(f"현재 시간차: {self._tide}ms")
+                self._logger.info(f"서버 시간과 동기화됨 ({headers['Date']})")
+                self._logger.info(f"현재 시간차: {self._tide}ms")
 
-            self._bSync = False
+                self._bSync = False
 
         header = ""
         binary_str = ""
@@ -189,23 +189,55 @@ class PEWSClient:
 
         self._logger.debug(f"{url.split('/')[-1]}")
 
-    async def run(self):
+    async def _looper(self):
         await self.get_sta(f"{BIN_PATH}{self._pTime}.s")
-        await self.get_MMI(f"{BIN_PATH}{self._pTime}.b")
+        await self.get_MMI(f"{BIN_PATH}{self._pTime}")
         asyncio.create_task(self._sync_interval())
 
         while True:
-            cTime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+            asyncio.create_task(self.get_MMI(f"{BIN_PATH}{self._pTime}"))
 
-            if cTime != self._pTime:
-                await self.get_MMI(f"{BIN_PATH}{cTime}.b")
+            if self.eqk_time != self.latest_eqk_time:
+                self._logger.info("새로운 조기경보 수신됨!")
+                await self.on_new_eew_info(
+                    EEWInfo(
+                        lat=self.origin_lat,
+                        lon=self.origin_lon,
+                        mag=self.eqk_mag,
+                        dep=self.eqk_dep,
+                        time=self.eqk_time,
+                        max_intensity=self.eqk_max,
+                        max_area=self.eqk_max_area,
+                        sea=self.eqk_sea,
+                        eqk_str=self.eqk_str,
+                    )
+                )
+                self.latest_eqk_time = self.eqk_time
 
             if self._phase == 2:
                 pass
 
+            elif self._phase == 3:
+                pass
+
+            elif self._phase == 4:
+                pass
+
             await asyncio.sleep(1)
 
+    async def on_new_eew_info(self, eew_info: EEWInfo):
+        ...
 
-a = PEWSClient()
+    async def on_phase2(self):
+        ...
 
-asyncio.run(a.run())
+    async def on_phase_3(self):
+        ...
+
+    async def on_phase_4(self):
+        ...
+
+
+if __name__ == "__main__":
+    a = PEWSClient()
+    asyncio.run(a._looper())
