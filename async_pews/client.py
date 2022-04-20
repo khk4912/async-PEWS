@@ -3,7 +3,7 @@ import datetime
 import logging
 from inspect import iscoroutinefunction
 from time import time
-from typing import Coroutine
+from typing import Callable
 from urllib.parse import quote, unquote
 
 from conn import HTTP
@@ -241,7 +241,7 @@ class PEWSClient:
             asyncio.create_task(self.on_loop())
             await asyncio.sleep(1)
 
-    def event(self, func: Coroutine):
+    def event(self, func: Callable) -> Callable:
         if not iscoroutinefunction(func):
             raise TypeError("func must be a coroutine function")
 
@@ -261,7 +261,9 @@ class PEWSClient:
     async def on_new_eew_info(self, eew_info: EEWInfo):
         ...
 
-    async def on_phase_2(self):
+    async def on_phase_2(
+        self,
+    ):
         self._logger.debug("on_phase_2")
         ...
 
