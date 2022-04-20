@@ -261,9 +261,7 @@ class PEWSClient:
     async def on_new_eew_info(self, eew_info: EEWInfo):
         ...
 
-    async def on_phase_2(
-        self,
-    ):
+    async def on_phase_2(self, eew_info: EEWInfo):
         self._logger.debug("on_phase_2")
         ...
 
