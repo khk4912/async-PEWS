@@ -1,4 +1,5 @@
 from logging import Formatter
+from typing import Literal, get_args
 
 LOGGING_FORMAT = Formatter("[%(asctime)s][%(name)s][%(levelname)s] %(message)s")
 
@@ -20,8 +21,10 @@ B_SYNC = True
 
 BIN_PATH = "http://www.weather.go.kr/pews/data/"
 
+
 # fmt: off
-RA = [
+
+Region = Literal[
   "서울",
   "부산",
   "대구",
@@ -40,6 +43,9 @@ RA = [
   "경남",
   "제주",
 ]
+
+RA = get_args(Region)
+
 CA = [
   11110, 11140, 11170, 11200, 11215, 11230, 11260, 11290, 11305, 11320, 11350,
   11380, 11410, 11440, 11470, 11500, 11530, 11545, 11560, 11590, 11620, 11650,

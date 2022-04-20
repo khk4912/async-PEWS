@@ -1,7 +1,9 @@
 import asyncio
 import datetime
 import logging
+from inspect import iscoroutinefunction
 from time import time
+from typing import Coroutine
 from urllib.parse import quote, unquote
 
 from conn import HTTP
@@ -17,7 +19,7 @@ from constant import (
     TIDE,
     TZ_MSEC,
 )
-from model import EEWInfo, Station
+from model import EEWInfo, EqkInfo, Station
 
 
 class PEWSClient:
@@ -190,6 +192,7 @@ class PEWSClient:
         self._logger.debug(f"{url.split('/')[-1]}")
 
     async def _looper(self):
+        # print(self._pTime)
         await self.get_sta(f"{BIN_PATH}{self._pTime}.s")
         await self.get_MMI(f"{BIN_PATH}{self._pTime}")
         asyncio.create_task(self._sync_interval())
@@ -198,14 +201,14 @@ class PEWSClient:
             asyncio.create_task(self.get_MMI(f"{BIN_PATH}{self._pTime}"))
 
             if self.eqk_time != self.latest_eqk_time:
-                self._logger.info("새로운 조기경보 수신됨!")
+                self._logger.info("새로운 지진정보 수신됨!")
                 await self.on_new_eew_info(
                     EEWInfo(
                         lat=self.origin_lat,
                         lon=self.origin_lon,
                         mag=self.eqk_mag,
                         dep=self.eqk_dep,
-                        time=self.eqk_time,
+                        time=datetime.datetime.fromtimestamp(self.eqk_time / 1000),
                         max_intensity=self.eqk_max,
                         max_area=self.eqk_max_area,
                         sea=self.eqk_sea,
@@ -215,23 +218,55 @@ class PEWSClient:
                 self.latest_eqk_time = self.eqk_time
 
             if self._phase == 2:
-                pass
+                await self.on_phase_2()
 
             elif self._phase == 3:
-                pass
+                await self.on_phase_3(
+                    EqkInfo(
+                        lat=self.origin_lat,
+                        lon=self.origin_lon,
+                        mag=self.eqk_mag,
+                        dep=self.eqk_dep,
+                        time=datetime.datetime.fromtimestamp(self.eqk_time / 1000),
+                        max_intensity=self.eqk_max,
+                        max_area=self.eqk_max_area,
+                        sea=self.eqk_sea,
+                        eqk_str=self.eqk_str,
+                    )
+                )
 
             elif self._phase == 4:
-                pass
+                await self.on_phase_4()
 
+            asyncio.create_task(self.on_loop())
             await asyncio.sleep(1)
+
+    def event(self, func: Coroutine):
+        if not iscoroutinefunction(func):
+            raise TypeError("func must be a coroutine function")
+
+        setattr(self, func.__name__, func)
+        return func
+
+    def start(self):
+        asyncio.run(self._looper())
+
+    async def run(self):
+        await self._looper()
+
+    async def on_loop(self):
+        ...
+        # self._logger.debug("on_loop")
 
     async def on_new_eew_info(self, eew_info: EEWInfo):
         ...
 
-    async def on_phase2(self):
+    async def on_phase_2(self):
+        self._logger.debug("on_phase_2")
         ...
 
-    async def on_phase_3(self):
+    async def on_phase_3(self, eqk_info: EqkInfo):
+        self._logger.debug("on_phase_3")
         ...
 
     async def on_phase_4(self):
