@@ -6,8 +6,8 @@ from time import time
 from typing import Callable
 from urllib.parse import quote, unquote
 
-from conn import HTTP
-from constant import (
+from .conn import HTTP
+from .constant import (
     BIN_PATH,
     DELAY,
     HEADER_LEN,
@@ -19,7 +19,7 @@ from constant import (
     TIDE,
     TZ_MSEC,
 )
-from model import EEWInfo, EqkInfo, Station
+from .model import EEWInfo, EqkInfo, Station
 
 
 class PEWSClient:

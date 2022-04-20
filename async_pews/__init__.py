@@ -1,1 +1,1 @@
-from client import PEWSClient
+from .client import PEWSClient

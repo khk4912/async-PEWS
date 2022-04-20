@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from math import floor, sqrt
 
-from constant import Region
+from .constant import Region
 
 
 @dataclass
