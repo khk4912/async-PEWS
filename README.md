@@ -6,7 +6,7 @@
 
 ```python
 from async_pews import PEWSClient
-from async_pews.model import EEWInfo
+from async_pews.model import EEWInfo, EqkInfo
 
 pews = PEWSClient()
 
@@ -20,6 +20,8 @@ async def on_loop():
 @pews.event
 async def on_new_eew_info(eew_info: EEWInfo):
     # 새로운 조기경보가 발표되는 순간(phase 2)에 발생하는 이벤트
+    print("## 새로운 조기경보 발생! ##")
+    print(f"{eew_info.eqk_str}에서 추정규모 {eew_info.mag}의 정보 수신!")
     ...
 
 
@@ -29,12 +31,11 @@ async def on_phase_2(eew_info: EEWInfo):
 
 
 @pews.event
-async def on_phase_3(eew_info: EEWInfo):
+async def on_phase_3(eqk_info: EqkInfo):
     ...
 
 
 pews.start()
-
 ```
 
 ## License
