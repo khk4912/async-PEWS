@@ -24,11 +24,22 @@ async def on_new_eew_info(eew_info: EEWInfo):
     print(f"{eew_info.eqk_str}에서 추정규모 {eew_info.mag}의 정보 수신!")
     ...
 
+    # === EEWInfo Example ===
+    #
+    # EEWInfo(lat=33.15,
+    #         lon=122.24,
+    #         mag=5.3,
+    #         dep=0.0,
+    #         time=datetime.datetime(2021, 12, 14, 8, 19, 16),
+    #         max_intensity=6,
+    #         max_area=['제주'],
+    #         sea=True,
+    #         eqk_str='제주 서귀포시 서남서쪽 32km 해역')
+
 
 @pews.event
 async def on_phase_2(eew_info: EEWInfo):
     ...
-
 
 @pews.event
 async def on_phase_3(eqk_info: EqkInfo):
