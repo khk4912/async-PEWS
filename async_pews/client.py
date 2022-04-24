@@ -38,6 +38,7 @@ class PEWSClient:
         self.eqk_time = 0
         self.eqk_mag = 0
         self.eqk_dep = 0
+        self.eqk_id = 0
         self.eqk_str = ""
         self.eqk_info_str = ""
         self.eqk_time_str = ""
@@ -213,7 +214,7 @@ class PEWSClient:
         temp_grid_arr = []
 
         for i in range(len(byte_array)):
-            grid_str = bin(byte_array[i])[2:]
+            grid_str = self._fn_lpad(bin(byte_array[i])[2:], 8)
             temp_grid_arr.append(int(grid_str[0:4], 2))
             temp_grid_arr.append(int(grid_str[4:8], 2))
 
