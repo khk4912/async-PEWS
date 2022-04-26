@@ -2,6 +2,11 @@
 
 대한민국 기상청에서 제공하는 [사용자 맞춤형 지진정보서비스](https://www.weather.go.kr/pews/)의 비동기 Python 클라이언트
 
+## 발견된 문제점
+
+- EEWInfo dataclass의 `est_time`이 정상적으로 동작되지 않음(실제 PEWS의 예상 값보다 더 크게 표출)
+- 과거 데이터 처리 시도할 때에 알 수 없는 이유로 MMI 정보를 정상적으로 처리하지 못함 
+
 ## Usage
 
 ```python
