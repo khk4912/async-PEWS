@@ -227,10 +227,13 @@ class PEWSClient:
         asyncio.create_task(self._sync_interval())
 
         while True:
-            # asyncio.create_task(self.get_MMI(f"{BIN_PATH}{self._pTime}"))
-            await self.get_MMI(
-                "https://www.weather.go.kr/pews/data/2021007178/20211214082031"
-            )
+            asyncio.create_task(self.get_MMI(f"{BIN_PATH}{self._pTime}"))
+            # await self.get_MMI(
+            #     "https://www.weather.go.kr/pews/data/2021007178/20211214082031"
+            # )
+            # await self.get_MMI(
+            #     "https://www.weather.go.kr/pews/data/2021007178/20211214081930"
+            # )
             if self.eqk_time != self.latest_eqk_time:
                 self._logger.info("새로운 지진정보 수신됨!")
                 await self.on_new_eew_info(
