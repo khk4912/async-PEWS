@@ -1,6 +1,6 @@
 # async-PEWS
 
-대한민국 기상청에서 제공하는 [사용자 맞춤형 지진정보서비스](https://www.weather.go.kr/pews/)의 비동기 파이썬 클라이언트
+대한민국 기상청에서 제공하는 [사용자 맞춤형 지진정보서비스](https://www.weather.go.kr/pews/)의 비동기 Python 클라이언트
 
 ## Usage
 
@@ -35,7 +35,7 @@ async def on_new_eew_info(eew_info: EEWInfo):
     #         max_area=['제주'],
     #         sea=True,
     #         eqk_str='제주 서귀포시 서남서쪽 32km 해역')
-
+    #
 
 @pews.event
 async def on_phase_2(eew_info: EEWInfo):
