@@ -23,7 +23,7 @@ from .model import EEWInfo, EqkInfo, Station
 
 
 class PEWSClient:
-    def __init__(self) -> None:
+    def __init__(self, is_sim: bool = False) -> None:
         self._tide = TIDE
         self._TZ_MSEC = TZ_MSEC
         self._phase = 1
@@ -53,6 +53,8 @@ class PEWSClient:
         self._stream_handler.setFormatter(LOGGING_FORMAT)
         self._logger.setLevel(logging.DEBUG)
         self._logger.addHandler(self._stream_handler)
+
+        self.is_sim = is_sim
 
     @property
     def _time(self) -> int:
@@ -126,6 +128,7 @@ class PEWSClient:
     async def _sync_interval(self) -> None:
         while True:
             await asyncio.sleep(SYNC_PEROID)
+            self._logger.debug("bSync = True")
             self._bSync = True
 
     async def get_sta(self, url: str, data: str | None = None) -> None:
@@ -146,6 +149,11 @@ class PEWSClient:
         self._logger.info("측정소 목록 정보 수신 완료")
 
     async def get_MMI(self, url: str) -> None:
+        if self.is_sim == True:
+            HEADER_LEN = 1
+        else:
+            HEADER_LEN = 4
+
         send_time = self._time
         array_buffer, headers = await HTTP.get(f"{url}.b")
         byte_array = list(array_buffer)
@@ -232,7 +240,7 @@ class PEWSClient:
             #     "https://www.weather.go.kr/pews/data/2021007178/20211214082031"
             # )
             # await self.get_MMI(
-            #     "https://www.weather.go.kr/pews/data/2021007178/20211214081930"
+            #     "https://www.weather.go.kr/pews/data/2021007178/20211214082008"
             # )
             if self.eqk_time != self.latest_eqk_time:
                 self._logger.info("새로운 지진정보 수신됨!")
@@ -241,7 +249,6 @@ class PEWSClient:
                         lat=self.origin_lat,
                         lon=self.origin_lon,
                         mag=self.eqk_mag,
-                        dep=self.eqk_dep,
                         time=datetime.datetime.fromtimestamp(
                             (self.eqk_time + TZ_MSEC) / 1000
                         ),
@@ -261,7 +268,6 @@ class PEWSClient:
                         lat=self.origin_lat,
                         lon=self.origin_lon,
                         mag=self.eqk_mag,
-                        dep=self.eqk_dep,
                         time=datetime.datetime.fromtimestamp(
                             (self.eqk_time + TZ_MSEC) / 1000
                         ),
