@@ -156,7 +156,11 @@ class PEWSClient:
         """
         mmi_data = []
         for i in range(0, len(data), 4):
-            mmi_data.append(int(data[i : i + 4], 2))
+            mag = int(data[i : i + 4], 2)
+
+            if mag > 11:
+                mag = 1
+            mmi_data.append(mag)
 
         return mmi_data
 
@@ -321,10 +325,10 @@ class PEWSClient:
         asyncio.create_task(self._sync_interval())
 
         while True:
-            # asyncio.create_task(self.get_MMI(f"{BIN_PATH}{self._pTime}"))
-            await self.get_MMI(
-                "http://neciseew.kma.go.kr/pews/data/2021007178/20211214082520"
-            )
+            asyncio.create_task(self.get_MMI(f"{BIN_PATH}{self._pTime}"))
+            # await self.get_MMI(
+            #     "https://www.weather.go.kr/pews/data/2021007178/20211214081925"
+            # )
             if self.eqk_time != self.latest_eqk_time:
                 self._logger.info("새로운 지진정보 수신됨!")
                 if self._phase == 2:
@@ -389,7 +393,7 @@ class PEWSClient:
                         mag=self.eqk_mag,
                         dep=self.eqk_dep,
                         time=datetime.datetime.fromtimestamp(
-                            self.eqk_time + TZ_MSEC / 1000
+                            (self.eqk_time + TZ_MSEC) / 1000
                         ),
                         max_intensity=self.eqk_max,
                         max_area=self.eqk_max_area,
