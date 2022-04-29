@@ -3,7 +3,7 @@ import datetime
 import logging
 from inspect import iscoroutinefunction
 from time import time
-from typing import Callable
+from typing import Callable, TypeVar
 from urllib.parse import quote, unquote
 
 from .conn import HTTP
@@ -23,7 +23,18 @@ from .model import EEWInfo, EqkInfo, Station
 
 
 class PEWSClient:
+    """
+    PEWS 클라이언트 클래스
+    """
+
     def __init__(self, is_sim: bool = False) -> None:
+        """
+
+        Parameters
+        ----------
+        is_sim : bool, optional
+            과거(sim) 데이터를 사용할 지의 여부, 기본값은 False
+        """
         self._tide = TIDE
         self._TZ_MSEC = TZ_MSEC
         self._phase = 1
@@ -58,20 +69,63 @@ class PEWSClient:
 
     @property
     def _time(self) -> int:
+        """
+        PEWS 내부에서 사용하기 위해 Unix time 형태로 현재 시각을 반환합니다.
+
+        Returns
+        -------
+        int
+            현재 Unix time
+        """
         return int(time() * 1000)
 
     @property
     def _pTime(self) -> str:
+        """
+        PEWS의 URL 요청에 사용될 시각을 yyyymmddhhmmss 형태로 반환합니다.
+        이때 시각은 self._tide 값을 이용하여 보정됩니다.
+
+        Returns
+        -------
+        str
+            보정된 현재 시각(yyyymmddhhmmss)
+        """
         return datetime.datetime.fromtimestamp(
             (self._time - self._tide - self._TZ_MSEC) // 1000
         ).strftime("%Y%m%d%H%M%S")
 
     def _fn_lpad(self, string: str, _len: int) -> str:
+        """
+        _len의 길이만큼 왼쪽에 0을 채워서 반환합니다.
+
+        Parameters
+        ----------
+        string : str
+            왼쪽에 0을 채울 문자열
+        _len : int
+            왼쪽에 0을 채울 길이
+
+        Returns
+        -------
+        str
+            왼쪽에 0을 채워서 반환된 문자열
+        """
+
         while len(string) < _len:
             string = "0" + string
         return string
 
     def _fn_sta_bin_handler(self, data: str) -> None:
+        """
+        Station 정보를 불러오고,
+        불러온 정보를 경도, 위도, MMI 정보와 함께 저장합니다.
+
+        Parameters
+        ----------
+        data : str
+            get_sta 메소드에서 얻은 binary_str 데이터
+        """
+
         new_sta_list = []
         sta_lat_arr = []
         sta_lon_arr = []
@@ -87,6 +141,19 @@ class PEWSClient:
             self.sta_list = new_sta_list
 
     def _mmi_bin_handler(self, data: str) -> list[int]:
+        """
+        MMI 정보를 불러옵니다.
+
+        Parameters
+        ----------
+        data : str
+            _callback 메소드의 data
+
+        Returns
+        -------
+        list[int]
+            MMI 값을 저장한 리스트
+        """
         mmi_data = []
         for i in range(0, len(data), 4):
             mmi_data.append(int(data[i : i + 4], 2))
@@ -94,6 +161,17 @@ class PEWSClient:
         return mmi_data
 
     def _eqk_handler(self, data: str, buffer: list[int]) -> None:
+        """
+        지진이 발생했을 시 (phase == 2 or phase==3)
+        관련한 정보를 불러와서 저장합니다.
+
+        Parameters
+        ----------
+        data : str
+            eqk_data
+        buffer : list[int]
+            info_str_arr
+        """
         self.origin_lat = 30 + int(data[0:10], 2) / 100
         self.origin_lon = 120 + int(data[10:20], 2) / 100
         self.eqk_mag = int(data[20:27], 2) / 10
@@ -149,6 +227,14 @@ class PEWSClient:
         self._logger.info("측정소 목록 정보 수신 완료")
 
     async def get_MMI(self, url: str) -> None:
+        """
+        MMI 정보를 불러옵니다.
+
+        Parameters
+        ----------
+        url : str
+            불러올 URL (.b로 끝나면 안됨)
+        """
         if self.is_sim == True:
             HEADER_LEN = 1
         else:
@@ -235,31 +321,46 @@ class PEWSClient:
         asyncio.create_task(self._sync_interval())
 
         while True:
-            asyncio.create_task(self.get_MMI(f"{BIN_PATH}{self._pTime}"))
-            # await self.get_MMI(
-            #     "https://www.weather.go.kr/pews/data/2021007178/20211214082031"
-            # )
-            # await self.get_MMI(
-            #     "https://www.weather.go.kr/pews/data/2021007178/20211214082008"
-            # )
+            # asyncio.create_task(self.get_MMI(f"{BIN_PATH}{self._pTime}"))
+            await self.get_MMI(
+                "http://neciseew.kma.go.kr/pews/data/2021007178/20211214082520"
+            )
             if self.eqk_time != self.latest_eqk_time:
                 self._logger.info("새로운 지진정보 수신됨!")
-                await self.on_new_eew_info(
-                    EEWInfo(
-                        lat=self.origin_lat,
-                        lon=self.origin_lon,
-                        mag=self.eqk_mag,
-                        time=datetime.datetime.fromtimestamp(
-                            (self.eqk_time + TZ_MSEC) / 1000
-                        ),
-                        max_intensity=self.eqk_max,
-                        max_area=self.eqk_max_area,
-                        sea=self.eqk_sea,
-                        eqk_str=self.eqk_str,
-                        _grid_arr=self._grid_arr,
-                        _tide=self._tide,
+                if self._phase == 2:
+                    await self.on_new_eew_info(
+                        EEWInfo(
+                            lat=self.origin_lat,
+                            lon=self.origin_lon,
+                            mag=self.eqk_mag,
+                            time=datetime.datetime.fromtimestamp(
+                                (self.eqk_time + TZ_MSEC) / 1000
+                            ),
+                            max_intensity=self.eqk_max,
+                            max_area=self.eqk_max_area,
+                            sea=self.eqk_sea,
+                            eqk_str=self.eqk_str,
+                            _grid_arr=self._grid_arr,
+                            _tide=self._tide,
+                        )
                     )
-                )
+                elif self._phase == 3:
+                    await self.on_new_eqk_info(
+                        EqkInfo(
+                            lat=self.origin_lat,
+                            lon=self.origin_lon,
+                            mag=self.eqk_mag,
+                            dep=self.eqk_dep,
+                            time=datetime.datetime.fromtimestamp(
+                                (self.eqk_time + TZ_MSEC) / 1000
+                            ),
+                            max_intensity=self.eqk_max,
+                            max_area=self.eqk_max_area,
+                            sea=self.eqk_sea,
+                            eqk_str=self.eqk_str,
+                        )
+                    )
+
                 self.latest_eqk_time = self.eqk_time
 
             if self._phase == 2:
@@ -287,7 +388,9 @@ class PEWSClient:
                         lon=self.origin_lon,
                         mag=self.eqk_mag,
                         dep=self.eqk_dep,
-                        time=datetime.datetime.fromtimestamp(self.eqk_time / 1000),
+                        time=datetime.datetime.fromtimestamp(
+                            self.eqk_time + TZ_MSEC / 1000
+                        ),
                         max_intensity=self.eqk_max,
                         max_area=self.eqk_max_area,
                         sea=self.eqk_sea,
@@ -318,10 +421,15 @@ class PEWSClient:
         await self._looper()
 
     async def on_loop(self):
+        self._logger.debug("on_loop")
         ...
-        # self._logger.debug("on_loop")
 
     async def on_new_eew_info(self, eew_info: EEWInfo):
+        self._logger.debug("on_new_eew_info")
+        ...
+
+    async def on_new_eqk_info(self, eqk_info: EqkInfo):
+        self._logger.debug("on_new_eqk_info")
         ...
 
     async def on_phase_2(self, eew_info: EEWInfo):
@@ -333,6 +441,7 @@ class PEWSClient:
         ...
 
     async def on_phase_4(self):
+        self._logger.debug("on_phase_4")
         ...
 
 
