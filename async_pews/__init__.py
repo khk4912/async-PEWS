@@ -1,1 +1,2 @@
-from .client import PEWSClient
+from .client.client import *
+from .model.model import *
