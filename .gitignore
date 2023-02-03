@@ -132,3 +132,4 @@ dmypy.json
 .vscode
 pews.js
 origin.js
+.DS_Store
