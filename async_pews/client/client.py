@@ -4,12 +4,12 @@ from multiprocessing.connection import Client
 from time import time
 from typing import TYPE_CHECKING, Any
 
-from .CONSTANT import BIN_PATH, DELAY, TIDE, TZ_MSEC
-from .utils import Utils
-from ..model.model import Response, Station
-from ..exceptions.exceptions import HTTPStatusError
+from aiohttp import ClientResponse, ClientSession
 
-from aiohttp import ClientSession, ClientResponse
+from ..exceptions.exceptions import HTTPStatusError
+from ..model.model import Response, Station
+from .CONSTANT import BIN_PATH, DELAY, MAX_EQK_INFO_LEN, MAX_EQK_STR_LEN, TIDE, TZ_MSEC
+from .utils import Utils
 
 
 class SessionManager:
@@ -40,8 +40,10 @@ class HTTPClient:
         self.__tide = TIDE
         self.__delay = DELAY
         self.__clock = self.__time
+        self.__HEADER_LEN = 4
 
-        self.station_list: list[Station] = []
+        self._phase = 1
+        self._station_list: list[Station] = []
 
     def __del__(self) -> None:
         asyncio.run(self.__session.close_session())
@@ -65,7 +67,9 @@ class HTTPClient:
                     resp.headers,
                 )
 
-    async def __get_sta(self, url: str | None = None, data: Any | None = None) -> None:
+    async def __get_sta(
+        self, url: str | None = None, data_str: str | None = None
+    ) -> None:
         url = url or BIN_PATH + f"{self.__pTime}.s"
 
         resp = await self._get(url)
@@ -89,8 +93,8 @@ class HTTPClient:
 
         await self.__sta_bin_handler(binary_str)
 
-        if data:
-            await self.__callback(data)
+        if data_str:
+            await self.__callback(data_str)
 
     async def __sta_bin_handler(self, data: str) -> None:
         sta_list = []
@@ -107,13 +111,15 @@ class HTTPClient:
         if len(sta_list) > 99:
             self.station_list = sta_list
 
-    async def __callback(self, data: bytes) -> None:
+    async def __callback(self, data: str) -> None:
         pass
 
     async def __get_MMI(self, url: str | None = None) -> None:
         url = url or BIN_PATH + f"{self.__pTime}.b"
 
+        send_time = self.__time
         resp = await self._get(url)
+        recv_time = self.__time
 
         if resp.status != 200:
             raise HTTPStatusError(
@@ -122,8 +128,61 @@ class HTTPClient:
             )
         headers = resp.headers
 
-        st = headers["ST"]
-        print(st)
+        st = headers["ST"].replace(".", "")
+        last_modified = headers["Last-Modified"]
+
+        # Time-Sync
+        if self.__tide == self.__delay or recv_time - send_time < 100:
+            self.__tide = self.__time - int(st) + self.__delay
+
+        # Data Handle
+        data = resp.data
+        byte_array = list(data)
+
+        header = ""
+        binary_str = ""
+        for i in range(self.__HEADER_LEN):
+            header += Utils.lpad(bin(data[i])[2:], 8)
+
+        for i in range(self.__HEADER_LEN, len(data)):
+            binary_str += Utils.lpad(bin(data[i])[2:], 8)
+
+        staF = header[0] == "1"
+
+        if header[1] == header[2] == "0":
+            if self._phase == 2 or self._phase == 3:
+                self._phase = 1
+        elif header[1] == "1" and header[2] == "0":
+            self._phase = 2
+
+        elif header[1] == "1" and header[2] == "1":
+            self._phase = 3
+
+        elif header[1] == "0" and header[2] == "1":
+            self._phase = 4
+
+        info_str_arr = []
+
+        for i in range(len(byte_array) - MAX_EQK_INFO_LEN, len(byte_array)):
+            info_str_arr.append(binary_str[i])
+
+        if staF or len(self._station_list) < 99:
+            await self.__get_sta(url, binary_str)
+        else:
+            await self.__callback(binary_str)
+
+        eqk_data = binary_str[0 - (MAX_EQK_STR_LEN * 8 + MAX_EQK_INFO_LEN) :]
+
+        if self._phase == 2 or self._phase == 3:
+            await self.__fn_eqk_handler(eqk_data, info_str_arr)
+        elif self._phase == 4:
+            await self._fn_parse_eqk_id(eqk_data)
+
+    async def __fn_eqk_handler(self, eqk_data: str, info_str_arr: list[str]) -> None:
+        pass
+
+    async def _fn_parse_eqk_id(self, eqk_data: str) -> None:
+        pass
 
 
 if __name__ == "__main__":

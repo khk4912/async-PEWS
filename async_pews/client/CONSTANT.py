@@ -53,3 +53,6 @@ TIDE = DELAY
 SIM = False
 
 BIN_PATH = "http://www.weather.go.kr/pews/data/"
+
+MAX_EQK_INFO_LEN = 120
+MAX_EQK_STR_LEN = 60

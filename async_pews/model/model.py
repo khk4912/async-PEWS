@@ -13,4 +13,4 @@ class Station:
 class Response:
     status: int
     data: bytes
-    headers: Mapping[str, Any]
+    headers: Mapping[str, str]
