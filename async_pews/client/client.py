@@ -1,10 +1,9 @@
 import asyncio
 from datetime import datetime
-from multiprocessing.connection import Client
 from time import time
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote, unquote
-from aiohttp import ClientResponse, ClientSession
+from aiohttp import ClientSession
 
 from ..exceptions.exceptions import HTTPStatusError
 from ..model.model import EarthquakeEvent, Response, Station
