@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from .CONSTANT import BIN_PATH, DELAY, TIDE, TZ_MSEC
 from .utils import Utils
-from ..model.model import Station
+from ..model.model import Response, Station
 from ..exceptions.exceptions import HTTPStatusError
 
 from aiohttp import ClientSession, ClientResponse
@@ -43,8 +43,6 @@ class HTTPClient:
 
         self.station_list: list[Station] = []
 
-        asyncio.run(self.__get_sta())
-
     def __del__(self) -> None:
         asyncio.run(self.__session.close_session())
 
@@ -58,10 +56,14 @@ class HTTPClient:
             (self.__time - self.__tide - TZ_MSEC) // 1000
         ).strftime("%Y%m%d%H%M%S")
 
-    async def _get(self, url: str) -> ClientResponse:
+    async def _get(self, url: str) -> Response:
         async with self.__session as session:
             async with session.get(url, timeout=1) as resp:
-                return resp
+                return Response(
+                    resp.status,
+                    await resp.read(),
+                    resp.headers,
+                )
 
     async def __get_sta(self, url: str | None = None, data: Any | None = None) -> None:
         url = url or BIN_PATH + f"{self.__pTime}.s"
@@ -74,7 +76,7 @@ class HTTPClient:
                 "Invaild HTTP status code received in __get_sta",
             )
 
-        data = await resp.read()
+        data = resp.data
 
         if not data:
             return
@@ -102,11 +104,26 @@ class HTTPClient:
         for i in range(len(sta_lat)):
             sta_list.append(Station(sta_lat[i], sta_lon[i], i))
 
+        if len(sta_list) > 99:
+            self.station_list = sta_list
+
     async def __callback(self, data: bytes) -> None:
         pass
 
-    async def __get_MMI(self) -> None:
-        pass
+    async def __get_MMI(self, url: str | None = None) -> None:
+        url = url or BIN_PATH + f"{self.__pTime}.b"
+
+        resp = await self._get(url)
+
+        if resp.status != 200:
+            raise HTTPStatusError(
+                resp.status,
+                "Invaild HTTP status code received in __get_MMI",
+            )
+        headers = resp.headers
+
+        st = headers["ST"]
+        print(st)
 
 
 if __name__ == "__main__":
