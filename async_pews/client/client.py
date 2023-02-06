@@ -113,13 +113,25 @@ class HTTPClient:
             sta_lon.append(120 + int(data[i + 10 : i + 20], 2) / 100)
 
         for i in range(len(sta_lat)):
-            sta_list.append(Station(sta_lat[i], sta_lon[i], i))
+            sta_list.append(Station(sta_lat[i], sta_lon[i], i, 0))
 
         if len(sta_list) > 99:
             self.station_list = sta_list
 
     async def __callback(self, data: str) -> None:
-        pass
+        mmi = await self.__mmi_bin_handler(data)
+
+        for i in range(len(self._station_list)):
+            self._station_list[i].mmi = mmi[i]
+
+    async def __mmi_bin_handler(self, data: str) -> list[int]:
+        mmi_data = []
+
+        if len(data) > 0:
+            for i in range(0, len(data), 4):
+                mmi_data.append(int(data[i : i + 4], 2))
+
+        return mmi_data
 
     async def __get_MMI(self, url: str | None = None) -> None:
         url = url or BIN_PATH + f"{self.__pTime}.b"
@@ -182,9 +194,9 @@ class HTTPClient:
         if self._phase == 2 or self._phase == 3:
             await self.__fn_eqk_handler(eqk_data, info_str_arr)
         elif self._phase == 4:
-            await self._fn_parse_eqk_id(eqk_data)
+            self.__parse_eqk_id(eqk_data)
 
-    async def __fn_eqk_handler(self, eqk_data: str, info_str_arr: list[str]) -> None:
+    async def __fn_eqk_handler(self, eqk_data: str, info_str_arr: list[int]) -> None:
         origin_lat = 30 + int(eqk_data[0:10], 2) / 100
         origin_lon = 120 + int(eqk_data[10:20], 2) / 100
         eqk_mag = int(eqk_data[20:27], 2) / 10
@@ -219,6 +231,9 @@ class HTTPClient:
             eqk_id,
             eqk_str,
         )
+
+    def __parse_eqk_id(self, eqk_data: str) -> str | None:
+        return "20" + str(int(eqk_data[69:95], 2)) if eqk_data else None
 
 
 if __name__ == "__main__":

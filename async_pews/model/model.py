@@ -7,6 +7,7 @@ class Station:
     lat: float
     lon: float
     idx: int
+    mmi: int
 
 
 @dataclass
