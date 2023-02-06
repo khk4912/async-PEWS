@@ -24,15 +24,12 @@ class SessionManager:
         self.__session: ClientSession | None = None
 
     async def __aenter__(self) -> ClientSession:
-        self.__session = ClientSession(timeout=1000)
+        self.__session = ClientSession()
         return self.__session
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        pass
-
-    async def close_session(self) -> None:
-        if self.__session:
-            await self.__session.close()
+        assert self.__session
+        await self.__session.close()
 
     @property
     def session(self) -> ClientSession | None:
@@ -40,7 +37,7 @@ class SessionManager:
 
 
 class HTTPClient:
-    def __init__(self) -> None:
+    def __init__(self, sim: bool = False) -> None:
 
         # Name Mangling
         self.__session = SessionManager()
@@ -48,12 +45,14 @@ class HTTPClient:
         self.__delay = DELAY
         self.__HEADER_LEN = 4
 
+        self.__sim = sim
+
         self._phase = 1
         self._eqk_event: EarthquakeEvent | None = None
         self._station_list: list[Station] = []
 
-    def __del__(self) -> None:
-        asyncio.run(self.__session.close_session())
+    # def __del__(self) -> None:
+    #     asyncio.run(self.__session.close())
 
     @property
     def __time(self) -> int:
@@ -67,18 +66,19 @@ class HTTPClient:
 
     async def _get(self, url: str) -> Response:
         async with self.__session as session:
-            async with session.get(url, timeout=1) as resp:
-                return Response(
+            async with session.get(url) as resp:
+                resp = Response(
                     resp.status,
                     await resp.read(),
                     resp.headers,
                 )
+        return resp
 
     async def _get_sta(
         self, url: str | None = None, data_str: str | None = None
     ) -> None:
         url = url or BIN_PATH + f"{self.__pTime}.s"
-
+        print(url)
         resp = await self._get(url)
 
         if resp.status != 200:
@@ -96,7 +96,7 @@ class HTTPClient:
         binary_str = ""
 
         for i in byte_array:
-            binary_str += Utils.lpad(bin(i)[2:], 8)
+            binary_str += Utils.lpad(str(bin(i)[2:]), 8)
 
         await self.__sta_bin_handler(binary_str)
 
@@ -109,14 +109,15 @@ class HTTPClient:
         sta_lon = []
 
         for i in range(0, len(data), 20):
+
             sta_lat.append(30 + int(data[i : i + 10], 2) / 100)
             sta_lon.append(120 + int(data[i + 10 : i + 20], 2) / 100)
 
         for i in range(len(sta_lat)):
-            sta_list.append(Station(sta_lat[i], sta_lon[i], i, 0))
+            sta_list.append(Station(sta_lat[i], sta_lon[i], i, -1))
 
         if len(sta_list) > 99:
-            self.station_list = sta_list
+            self._station_list = sta_list
 
     async def __callback(self, data: str) -> None:
         mmi = await self.__mmi_bin_handler(data)
@@ -135,6 +136,7 @@ class HTTPClient:
 
     async def _get_MMI(self, url: str | None = None) -> None:
         url = url or BIN_PATH + f"{self.__pTime}.b"
+        print(url, self.__tide)
 
         send_time = self.__time
         resp = await self._get(url)
@@ -185,7 +187,8 @@ class HTTPClient:
             info_str_arr.append(binary_str[i])
 
         if staF or len(self._station_list) < 99:
-            await self._get_sta(url, binary_str)
+            print("99 <")
+            await self._get_sta(url.replace(".b", ".s"), binary_str)
         else:
             await self.__callback(binary_str)
 
