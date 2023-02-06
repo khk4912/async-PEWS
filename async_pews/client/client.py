@@ -74,7 +74,7 @@ class HTTPClient:
                     resp.headers,
                 )
 
-    async def __get_sta(
+    async def _get_sta(
         self, url: str | None = None, data_str: str | None = None
     ) -> None:
         url = url or BIN_PATH + f"{self.__pTime}.s"
@@ -133,7 +133,7 @@ class HTTPClient:
 
         return mmi_data
 
-    async def __get_MMI(self, url: str | None = None) -> None:
+    async def _get_MMI(self, url: str | None = None) -> None:
         url = url or BIN_PATH + f"{self.__pTime}.b"
 
         send_time = self.__time
@@ -185,7 +185,7 @@ class HTTPClient:
             info_str_arr.append(binary_str[i])
 
         if staF or len(self._station_list) < 99:
-            await self.__get_sta(url, binary_str)
+            await self._get_sta(url, binary_str)
         else:
             await self.__callback(binary_str)
 
