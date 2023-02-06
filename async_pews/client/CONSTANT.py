@@ -50,6 +50,7 @@ TZ_MSEC = TIME_ZONE * 3600000
 
 DELAY = 1000
 TIDE = DELAY
+SYNC_PERIOD = 10000
 SIM = False
 
 BIN_PATH = "http://www.weather.go.kr/pews/data/"

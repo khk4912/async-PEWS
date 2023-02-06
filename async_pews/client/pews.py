@@ -14,6 +14,7 @@ class PEWS:
         PEWSClient = HTTPClient()
 
         await PEWSClient._get_sta()
+        asyncio.create_task(PEWSClient._sync_interval())
 
         while True:
             await asyncio.sleep(1)

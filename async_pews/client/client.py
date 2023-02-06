@@ -14,6 +14,7 @@ from .CONSTANT import (
     MAX_EQK_STR_LEN,
     TIDE,
     TZ_MSEC,
+    SYNC_PERIOD,
     RA,
 )
 from .utils import Utils
@@ -37,15 +38,14 @@ class SessionManager:
 
 
 class HTTPClient:
-    def __init__(self, sim: bool = False) -> None:
+    def __init__(self) -> None:
 
         # Name Mangling
         self.__session = SessionManager()
         self.__tide = TIDE
         self.__delay = DELAY
         self.__HEADER_LEN = 4
-
-        self.__sim = sim
+        self.__bsync = True
 
         self._phase = 1
         self._eqk_event: EarthquakeEvent | None = None
@@ -103,6 +103,11 @@ class HTTPClient:
         if data_str:
             await self.__callback(data_str)
 
+    async def _sync_interval(self) -> None:
+        while True:
+            await asyncio.sleep(SYNC_PERIOD)
+            self._bSync = True
+
     async def __sta_bin_handler(self, data: str) -> None:
         sta_list = []
         sta_lat = []
@@ -149,11 +154,14 @@ class HTTPClient:
             )
         headers = resp.headers
 
-        st = headers["ST"].replace(".", "")
+        if self.__bsync:
+            st = headers["ST"].replace(".", "")
 
-        # Time-Sync
-        if self.__tide == self.__delay or recv_time - send_time < 100:
-            self.__tide = self.__time - int(st) + self.__delay
+            # Time-Sync
+            if self.__tide == self.__delay or recv_time - send_time < 100:
+                self.__tide = self.__time - int(st) + self.__delay
+
+            self.__bsync = False
 
         # Data Handle
         data = resp.data
