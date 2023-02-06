@@ -194,7 +194,10 @@ class HTTPClient:
         if self._phase == 2 or self._phase == 3:
             await self.__fn_eqk_handler(eqk_data, info_str_arr)
         elif self._phase == 4:
-            self.__parse_eqk_id(eqk_data)
+            eqk_id = self.__parse_eqk_id(eqk_data)
+
+            if self._eqk_event:
+                self._eqk_event.eqk_id = eqk_id
 
     async def __fn_eqk_handler(self, eqk_data: str, info_str_arr: list[int]) -> None:
         origin_lat = 30 + int(eqk_data[0:10], 2) / 100
