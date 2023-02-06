@@ -3,12 +3,20 @@ from datetime import datetime
 from multiprocessing.connection import Client
 from time import time
 from typing import TYPE_CHECKING, Any
-
+from urllib.parse import quote, unquote
 from aiohttp import ClientResponse, ClientSession
 
 from ..exceptions.exceptions import HTTPStatusError
-from ..model.model import Response, Station
-from .CONSTANT import BIN_PATH, DELAY, MAX_EQK_INFO_LEN, MAX_EQK_STR_LEN, TIDE, TZ_MSEC
+from ..model.model import EarthquakeEvent, Response, Station
+from .CONSTANT import (
+    BIN_PATH,
+    DELAY,
+    MAX_EQK_INFO_LEN,
+    MAX_EQK_STR_LEN,
+    TIDE,
+    TZ_MSEC,
+    RA,
+)
 from .utils import Utils
 
 
@@ -39,10 +47,10 @@ class HTTPClient:
         self.__session = SessionManager()
         self.__tide = TIDE
         self.__delay = DELAY
-        self.__clock = self.__time
         self.__HEADER_LEN = 4
 
         self._phase = 1
+        self._eqk_event: EarthquakeEvent | None = None
         self._station_list: list[Station] = []
 
     def __del__(self) -> None:
@@ -129,7 +137,6 @@ class HTTPClient:
         headers = resp.headers
 
         st = headers["ST"].replace(".", "")
-        last_modified = headers["Last-Modified"]
 
         # Time-Sync
         if self.__tide == self.__delay or recv_time - send_time < 100:
@@ -179,10 +186,40 @@ class HTTPClient:
             await self._fn_parse_eqk_id(eqk_data)
 
     async def __fn_eqk_handler(self, eqk_data: str, info_str_arr: list[str]) -> None:
-        pass
+        origin_lat = 30 + int(eqk_data[0:10], 2) / 100
+        origin_lon = 120 + int(eqk_data[10:20], 2) / 100
+        eqk_mag = int(eqk_data[20:27], 2) / 10
+        eqk_depth = int(eqk_data[27:32], 2) / 10
+        eqk_time = int(eqk_data[37:69], 2) * 1000
+        eqk_id = "20" + str(int(eqk_data[69:95], 2)) if eqk_data else None
+        eqk_max = int(eqk_data[95:99], 2)
+        eqk_max_area = []
+        _eqk_max_area_str = eqk_data[99:116]
 
-    async def _fn_parse_eqk_id(self, eqk_data: str) -> None:
-        pass
+        if _eqk_max_area_str != "11111111111111111":
+            for i in range(17):
+                if _eqk_max_area_str[i] == "1":
+                    eqk_max_area.append(RA.ko[i])
+
+        eqk_str = unquote(
+            quote(
+                "".join([chr(x) for x in info_str_arr]), encoding="raw_unicode_escape"
+            )
+        ).strip()
+        eqk_sea = eqk_str.find("해역") != -1
+
+        self._eqk_event = EarthquakeEvent(
+            origin_lat,
+            origin_lon,
+            eqk_depth,
+            eqk_sea,
+            eqk_mag,
+            eqk_time,
+            eqk_max,
+            eqk_max_area,
+            eqk_id,
+            eqk_str,
+        )
 
 
 if __name__ == "__main__":
