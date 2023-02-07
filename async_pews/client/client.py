@@ -114,9 +114,19 @@ class HTTPClient:
         sta_lon = []
 
         for i in range(0, len(data), 20):
+            print(i, "/", len(data))
+            try:
+                lat = int(data[i : i + 10], 2)
+            except:
+                lat = 0
+            try:
+                lon = int(data[i + 10 : i + 20], 2)
+            except:
+                lon = 0
 
-            sta_lat.append(30 + int(data[i : i + 10], 2) / 100)
-            sta_lon.append(120 + int(data[i + 10 : i + 20], 2) / 100)
+            sta_lat.append(30 + lat / 100)
+
+            sta_lon.append(120 + lon / 100)
 
         for i in range(len(sta_lat)):
             sta_list.append(Station(sta_lat[i], sta_lon[i], i, -1))
@@ -128,7 +138,10 @@ class HTTPClient:
         mmi = await self.__mmi_bin_handler(data)
 
         for i in range(len(self._station_list)):
-            self._station_list[i].mmi = mmi[i]
+            try:
+                self._station_list[i].mmi = mmi[i]
+            except:
+                pass
 
     async def __mmi_bin_handler(self, data: str) -> list[int]:
         mmi_data = []

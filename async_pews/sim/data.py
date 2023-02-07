@@ -1,11 +1,11 @@
 from datetime import datetime
-from enum import Enum
+from typing import NamedTuple
 
 
 from .sim import SimulationPEWS
 
 
-class DefaultSimulationDataset(Enum):
+class DefaultSimulationDataset(NamedTuple):
     JEJU = SimulationPEWS(
         2021007178,
         datetime(2021, 12, 14, 17, 19, 9),
