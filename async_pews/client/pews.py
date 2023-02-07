@@ -21,10 +21,15 @@ class PEWS:
 
             self.phase = PEWSClient._phase
             self._phase_handler(PEWSClient, self.phase)
+            asyncio.create_task(self.on_loop())
 
     def _phase_handler(self, PEWSClient: HTTPClient, phase: int) -> None:
 
         match phase:
+
+            case 1:
+                asyncio.create_task(self.on_phase_1())
+
             case 2 | 3:
                 if (
                     PEWSClient._eqk_event
@@ -63,6 +68,12 @@ class PEWS:
         print(eqk_event)
 
         ...
+
+    async def on_phase_1(self):
+        pass
+
+    async def on_loop(self):
+        pass
 
     async def on_phase_2(self, eqk_event: EarthquakeEvent):
         print("Phase 2")
