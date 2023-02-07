@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from time import time
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote, unquote
@@ -38,13 +38,13 @@ class SessionManager:
 
 
 class HTTPClient:
-    def __init__(self) -> None:
+    def __init__(self, sim: bool = False) -> None:
 
         # Name Mangling
         self.__session = SessionManager()
         self.__tide = TIDE
         self.__delay = DELAY
-        self.__HEADER_LEN = 4
+        self.__HEADER_LEN = 1 if sim else 4
         self.__bsync = True
 
         self._phase = 1
@@ -191,8 +191,8 @@ class HTTPClient:
 
         info_str_arr = []
 
-        for i in range(len(byte_array) - MAX_EQK_INFO_LEN, len(byte_array)):
-            info_str_arr.append(binary_str[i])
+        for i in range(len(byte_array) - MAX_EQK_STR_LEN, len(byte_array)):
+            info_str_arr.append(byte_array[i])
 
         if staF or len(self._station_list) < 99:
             print("99 <")
@@ -210,7 +210,7 @@ class HTTPClient:
             if self._eqk_event:
                 self._eqk_event.eqk_id = eqk_id
 
-    async def __fn_eqk_handler(self, eqk_data: str, info_str_arr: list[int]) -> None:
+    async def __fn_eqk_handler(self, eqk_data: str, info_str_arr: list[str]) -> None:
         origin_lat = 30 + int(eqk_data[0:10], 2) / 100
         origin_lon = 120 + int(eqk_data[10:20], 2) / 100
         eqk_mag = int(eqk_data[20:27], 2) / 10
@@ -228,7 +228,8 @@ class HTTPClient:
 
         eqk_str = unquote(
             quote(
-                "".join([chr(x) for x in info_str_arr]), encoding="raw_unicode_escape"
+                "".join([chr(int(x)) for x in info_str_arr]),
+                encoding="raw_unicode_escape",
             )
         ).strip()
         eqk_sea = eqk_str.find("해역") != -1
@@ -239,7 +240,7 @@ class HTTPClient:
             eqk_depth,
             eqk_sea,
             eqk_mag,
-            eqk_time,
+            datetime.fromtimestamp(eqk_time // 1000) + timedelta(hours=9),
             eqk_max,
             eqk_max_area,
             eqk_id,

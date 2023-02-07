@@ -1,5 +1,6 @@
+from datetime import datetime
 from dataclasses import dataclass
-from typing import Mapping, Any
+from typing import Mapping
 
 
 @dataclass
@@ -24,7 +25,7 @@ class EarthquakeEvent:
     depth: float
     is_sea: bool
     magnitude: float
-    time: int
+    time: datetime
     max_intensity: int
     max_intensity_area: list[str]
     eqk_id: str | None
