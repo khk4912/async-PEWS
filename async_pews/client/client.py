@@ -135,7 +135,8 @@ class HTTPClient:
 
         if len(data) > 0:
             for i in range(0, len(data), 4):
-                mmi_data.append(int(data[i : i + 4], 2))
+                mmi = int(data[i : i + 4], 2)
+                mmi_data.append(mmi if mmi < 12 else 1)
 
         return mmi_data
 
