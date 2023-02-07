@@ -7,8 +7,9 @@ from ..client.pews import PEWS
 
 
 class SimulationPEWS(PEWS):
-    def __init__(self, start_time: datetime, end_time: datetime) -> None:
+    def __init__(self, eqk_id: int, start_time: datetime, end_time: datetime) -> None:
         super().__init__()
+        self.__eqk_id = eqk_id
         self.__start_time = start_time - timedelta(hours=9)
         self.__cur_time = self.__start_time
         self.__end_time = end_time - timedelta(hours=9)
@@ -20,7 +21,7 @@ class SimulationPEWS(PEWS):
         PEWSClient_Sim = HTTPClient(sim=True)
 
         await PEWSClient_Sim._get_sta(
-            f"{BIN_PATH}2021007178/{self.__start_time.strftime('%Y%m%d%H%M%S')}.s"
+            f"{BIN_PATH}{self.__eqk_id}/{self.__start_time.strftime('%Y%m%d%H%M%S')}.s"
         )
 
         while True:
@@ -32,7 +33,7 @@ class SimulationPEWS(PEWS):
 
             asyncio.create_task(
                 PEWSClient_Sim._get_MMI(
-                    f"{BIN_PATH}2021007178/{self.__cur_time.strftime('%Y%m%d%H%M%S')}.b"
+                    f"{BIN_PATH}{self.__eqk_id}/{self.__cur_time.strftime('%Y%m%d%H%M%S')}.b"
                 )
             )
             self.phase = PEWSClient_Sim._phase
@@ -40,6 +41,6 @@ class SimulationPEWS(PEWS):
 
 
 # sim = SimulationPEWS(
-#     datetime(2021, 12, 14, 17, 23, 20), datetime(2021, 12, 14, 17, 23, 30)
+#     2017000407, datetime(2017, 11, 15, 14, 29, 28), datetime(2017, 11, 15, 14, 35, 28)
 # )
 # sim.run()
