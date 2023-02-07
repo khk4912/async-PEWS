@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime, timedelta
 from time import time
-from typing import TYPE_CHECKING, Any
+import logging
 from urllib.parse import quote, unquote
 from aiohttp import ClientSession
 
@@ -51,6 +51,8 @@ class HTTPClient:
         self._eqk_event: EarthquakeEvent | None = None
         self._station_list: list[Station] = []
 
+        self.__logger = logging.getLogger("async_pews")
+
     # def __del__(self) -> None:
     #     asyncio.run(self.__session.close())
 
@@ -65,6 +67,8 @@ class HTTPClient:
         ).strftime("%Y%m%d%H%M%S")
 
     async def _get(self, url: str) -> Response:
+        self.__logger.debug(f"Request to {url}")
+
         async with self.__session as session:
             async with session.get(url) as resp:
                 resp = Response(
@@ -78,8 +82,13 @@ class HTTPClient:
         self, url: str | None = None, data_str: str | None = None
     ) -> None:
         url = url or BIN_PATH + f"{self.__pTime}.s"
-        print(url)
-        resp = await self._get(url)
+
+        try:
+            resp = await self._get(url)
+        except Exception as err:
+            self.__logger.warn("Failed to get station data!")
+            self.__logger.debug("Error: ", err)
+            return
 
         if resp.status != 200:
             raise HTTPStatusError(
@@ -114,7 +123,7 @@ class HTTPClient:
         sta_lon = []
 
         for i in range(0, len(data), 20):
-            print(i, "/", len(data))
+
             try:
                 lat = int(data[i : i + 10], 2)
             except:
@@ -155,17 +164,20 @@ class HTTPClient:
 
     async def _get_MMI(self, url: str | None = None) -> None:
         url = url or BIN_PATH + f"{self.__pTime}.b"
-        print(url, self.__tide)
 
         send_time = self.__time
-        resp = await self._get(url)
+
+        try:
+            resp = await self._get(url)
+        except Exception as err:
+            self.__logger.warn("Failed to get MMI data!")
+            self.__logger.debug("Error: ", err)
+            return
+
         recv_time = self.__time
 
         if resp.status != 200:
-            raise HTTPStatusError(
-                resp.status,
-                "Invaild HTTP status code received in __get_MMI",
-            )
+            self.__logger.warn("Invaild HTTP status code received in __get_MMI")
         headers = resp.headers
 
         if self.__bsync:
@@ -174,6 +186,8 @@ class HTTPClient:
             # Time-Sync
             if self.__tide == self.__delay or recv_time - send_time < 100:
                 self.__tide = self.__time - int(st) + self.__delay
+
+            self.__logger.debug(f"Time-Synced, Current tide is {self.__tide}")
 
             self.__bsync = False
 
@@ -209,7 +223,6 @@ class HTTPClient:
             info_str_arr.append(byte_array[i])
 
         if staF or len(self._station_list) < 99:
-            print("99 <")
             await self._get_sta(url.replace(".b", ".s"), binary_str)
         else:
             await self.__callback(binary_str)

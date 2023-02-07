@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from datetime import datetime, timedelta
 
 from ..client.CONSTANT import BIN_PATH
@@ -13,6 +14,7 @@ class SimulationPEWS(PEWS):
         self.__start_time = start_time - timedelta(hours=9)
         self.__cur_time = self.__start_time
         self.__end_time = end_time - timedelta(hours=9)
+        self.__logger = logging.getLogger("async_pews")
 
     def increase_time(self):
         self.__cur_time += timedelta(seconds=1)
@@ -25,6 +27,9 @@ class SimulationPEWS(PEWS):
         )
 
         while True:
+            self.__logger.debug("Event on_loop")
+            asyncio.create_task(self.on_loop())
+
             await asyncio.sleep(1)
             self.increase_time()
 

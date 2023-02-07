@@ -21,13 +21,13 @@ class PEWS:
 
         while True:
             await asyncio.sleep(1)
+            self.__logger.debug("Event on_loop")
+            asyncio.create_task(self.on_loop())
+
             asyncio.create_task(PEWSClient._get_MMI())
 
             self.phase = PEWSClient._phase
             self._phase_handler(PEWSClient, self.phase)
-
-            self.__logger.debug("Event on_loop")
-            asyncio.create_task(self.on_loop())
 
     def _phase_handler(self, PEWSClient: HTTPClient, phase: int) -> None:
 
