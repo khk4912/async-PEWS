@@ -1,7 +1,6 @@
 import asyncio
 
-from async_pews.model.model import EarthquakeEvent
-
+from ..model.model import EarthquakeEvent
 from .client import HTTPClient
 
 
