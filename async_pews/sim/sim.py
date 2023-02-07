@@ -38,9 +38,3 @@ class SimulationPEWS(PEWS):
             )
             self.phase = PEWSClient_Sim._phase
             super()._phase_handler(PEWSClient_Sim, self.phase)
-
-
-# sim = SimulationPEWS(
-#     2017000407, datetime(2017, 11, 15, 14, 29, 28), datetime(2017, 11, 15, 14, 35, 28)
-# )
-# sim.run()
