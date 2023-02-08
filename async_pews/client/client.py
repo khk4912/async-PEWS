@@ -235,7 +235,7 @@ class HTTPClient:
             eqk_id = self.__parse_eqk_id(eqk_data)
 
             if self._eqk_event:
-                self._eqk_event.eqk_id = eqk_id
+                self._eqk_event.earthquake_id = eqk_id
 
     async def __fn_eqk_handler(self, eqk_data: str, info_str_arr: list[str]) -> None:
         origin_lat = 30 + int(eqk_data[0:10], 2) / 100

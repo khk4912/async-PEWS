@@ -28,5 +28,5 @@ class EarthquakeEvent:
     time: datetime
     max_intensity: int
     max_intensity_area: list[str]
-    eqk_id: str | None
-    eqk_str: str
+    earthquake_id: str | None
+    earthquake_str: str
