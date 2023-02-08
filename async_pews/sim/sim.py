@@ -4,10 +4,10 @@ from datetime import datetime, timedelta
 
 from ..client.CONSTANT import BIN_PATH
 from ..client.client import HTTPClient
-from ..client.pews import PEWS
+from ..client.pews import PEWSClient
 
 
-class SimulationPEWS(PEWS):
+class SimulationPEWS(PEWSClient):
     def __init__(self, eqk_id: int, start_time: datetime, end_time: datetime) -> None:
         super().__init__()
         self.__eqk_id = eqk_id

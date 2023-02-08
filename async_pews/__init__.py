@@ -1,4 +1,4 @@
-from .client.pews import PEWS
+from .client.pews import PEWSClient
 
 from .sim.sim import SimulationPEWS
 from .sim.data import SimulationDataset

@@ -5,7 +5,7 @@ from ..model.model import EarthquakeEvent
 from .client import HTTPClient
 
 
-class PEWS:
+class PEWSClient:
     def __init__(self) -> None:
         self.__latest_eqk_time = 0
         self.__setup_logger()
@@ -71,7 +71,7 @@ class PEWS:
                             asyncio.create_task(self.on_phase_4())
 
     async def on_new_early_warning(self, eqk_event: EarthquakeEvent):
-        ...
+        print(eqk_event)
 
     async def on_new_earthquake_info(self, eqk_event: EarthquakeEvent):
         ...
@@ -96,4 +96,4 @@ class PEWS:
 
 
 if __name__ == "__main__":
-    PEWS().run()
+    PEWSClient().run()
