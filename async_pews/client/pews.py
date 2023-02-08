@@ -95,6 +95,9 @@ class PEWSClient:
     def run(self) -> None:
         asyncio.run(self.start())
 
+    def stop(self) -> None:
+        asyncio.get_event_loop().stop()
+
 
 if __name__ == "__main__":
     PEWSClient().run()
