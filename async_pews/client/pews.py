@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from dataclasses import asdict
+from typing import Callable
 
 from ..model.model import EarlyWarningInfo, EarthquakeInfo
 from .client import HTTPClient
@@ -15,6 +16,24 @@ class PEWSClient:
 
     def __setup_logger(self) -> None:
         self.__logger = logging.getLogger("async_pews")
+
+    def event(self, func: Callable) -> None:
+        if not asyncio.iscoroutinefunction(func):
+            raise TypeError("Must be a coroutine function!")
+
+        if not func.__name__ in [
+            "on_loop",
+            "on_phase_1",
+            "on_phase_2",
+            "on_phase_3",
+            "on_phase_4",
+            "on_new_early_warning",
+            "on_new_earthquake_info",
+        ]:
+            self.__logger.debug("Event name is not in the event list. Ignoring...")
+            return
+
+        setattr(self, func.__name__, func)
 
     async def start(self) -> None:
         PEWSClient = self.PEWSClient
