@@ -5,7 +5,7 @@ from typing import NamedTuple
 from .sim import SimulationPEWS
 
 
-class DefaultSimulationDataset(NamedTuple):
+class SimulationDataset(NamedTuple):
     JEJU = SimulationPEWS(
         2021007178,
         datetime(2021, 12, 14, 17, 19, 9),
