@@ -1,12 +1,16 @@
+from datetime import datetime, timedelta
 import logging
 import asyncio
 
-from ..model.model import EarthquakeEvent
+from dataclasses import asdict
+from ..model.model import EarlyWarningInfo, EarthquakeEvent, EarthquakeInfo
 from .client import HTTPClient
 
 
 class PEWSClient:
     def __init__(self) -> None:
+        self.PEWSClient: HTTPClient = HTTPClient()
+
         self.__latest_eqk_time = 0
         self.__setup_logger()
 
@@ -14,7 +18,7 @@ class PEWSClient:
         self.__logger = logging.getLogger("async_pews")
 
     async def start(self) -> None:
-        PEWSClient = HTTPClient()
+        PEWSClient = self.PEWSClient
 
         await PEWSClient._get_sta()
         asyncio.create_task(PEWSClient._sync_interval())
@@ -46,16 +50,16 @@ class PEWSClient:
                     match PEWSClient._phase:
                         case 2:
                             self.__logger.debug("Event on_new_early_warning")
-                            asyncio.create_task(
-                                self.on_new_early_warning(PEWSClient._eqk_event)
+                            eew_info = EarlyWarningInfo(
+                                **asdict(PEWSClient._eqk_event), _tide=PEWSClient._tide
                             )
-                            asyncio.create_task(self.on_phase_2(PEWSClient._eqk_event))
+                            asyncio.create_task(self.on_new_early_warning(eew_info))
+                            asyncio.create_task(self.on_phase_2(eew_info))
                         case 3:
                             self.__logger.debug("Event on_new_eqk_info")
-                            asyncio.create_task(
-                                self.on_new_earthquake_info(PEWSClient._eqk_event)
-                            )
-                            asyncio.create_task(self.on_phase_3(PEWSClient._eqk_event))
+                            eqk_info = EarthquakeInfo(**asdict(PEWSClient._eqk_event))
+                            asyncio.create_task(self.on_new_earthquake_info(eqk_info))
+                            asyncio.create_task(self.on_phase_3(eqk_info))
 
                     self.__latest_eqk_time = PEWSClient._eqk_event.time
 
@@ -63,18 +67,22 @@ class PEWSClient:
                     match phase:
                         case 2:
                             self.__logger.debug("Event on_phase_2")
-                            asyncio.create_task(self.on_phase_2(PEWSClient._eqk_event))
+                            eew_info = EarlyWarningInfo(
+                                **asdict(PEWSClient._eqk_event), _tide=PEWSClient._tide
+                            )
+                            asyncio.create_task(self.on_phase_2(eew_info))
                         case 3:
                             self.__logger.debug("Event on_phase_3")
-                            asyncio.create_task(self.on_phase_3(PEWSClient._eqk_event))
+                            eqk_info = EarthquakeInfo(**asdict(PEWSClient._eqk_event))
+                            asyncio.create_task(self.on_phase_3(eqk_info))
                         case 4:
                             self.__logger.debug("Event on_phase_4")
                             asyncio.create_task(self.on_phase_4())
 
-    async def on_new_early_warning(self, eqk_event: EarthquakeEvent):
-        print(eqk_event)
+    async def on_new_early_warning(self, eqk_event: EarlyWarningInfo):
+        ...
 
-    async def on_new_earthquake_info(self, eqk_event: EarthquakeEvent):
+    async def on_new_earthquake_info(self, eqk_event: EarthquakeInfo):
         ...
 
     async def on_phase_1(self):
@@ -83,10 +91,10 @@ class PEWSClient:
     async def on_loop(self):
         ...
 
-    async def on_phase_2(self, eqk_event: EarthquakeEvent):
+    async def on_phase_2(self, eqk_event: EarlyWarningInfo):
         ...
 
-    async def on_phase_3(self, eqk_event: EarthquakeEvent):
+    async def on_phase_3(self, eqk_event: EarthquakeInfo):
         ...
 
     async def on_phase_4(self):

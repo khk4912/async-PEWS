@@ -10,6 +10,7 @@ from ..client.pews import PEWSClient
 class SimulationPEWS(PEWSClient):
     def __init__(self, eqk_id: int, start_time: datetime, end_time: datetime) -> None:
         super().__init__()
+        self.PEWSClient = HTTPClient(sim=True)
         self.__eqk_id = eqk_id
         self.__start_time = start_time - timedelta(hours=9)
         self.__cur_time = self.__start_time
@@ -20,7 +21,7 @@ class SimulationPEWS(PEWSClient):
         self.__cur_time += timedelta(seconds=1)
 
     async def start(self) -> None:
-        PEWSClient_Sim = HTTPClient(sim=True)
+        PEWSClient_Sim = self.PEWSClient
 
         await PEWSClient_Sim._get_sta(
             f"{BIN_PATH}{self.__eqk_id}/{self.__start_time.strftime('%Y%m%d%H%M%S')}.s"

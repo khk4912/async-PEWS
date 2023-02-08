@@ -42,7 +42,7 @@ class HTTPClient:
 
         # Name Mangling
         self.__session = SessionManager()
-        self.__tide = TIDE
+        self._tide = TIDE
         self.__delay = DELAY
         self.__HEADER_LEN = 1 if sim else 4
         self.__bsync = True
@@ -63,7 +63,7 @@ class HTTPClient:
     @property
     def __pTime(self) -> str:
         return datetime.fromtimestamp(
-            (self.__time - self.__tide - TZ_MSEC) // 1000
+            (self.__time - self._tide - TZ_MSEC) // 1000
         ).strftime("%Y%m%d%H%M%S")
 
     async def _get(self, url: str) -> Response:
@@ -184,10 +184,10 @@ class HTTPClient:
             st = headers["ST"].replace(".", "")
 
             # Time-Sync
-            if self.__tide == self.__delay or recv_time - send_time < 100:
-                self.__tide = self.__time - int(st) + self.__delay
+            if self._tide == self.__delay or recv_time - send_time < 100:
+                self._tide = self.__time - int(st) + self.__delay
 
-            self.__logger.debug(f"Time-Synced, Current tide is {self.__tide}")
+            self.__logger.debug(f"Time-Synced, Current tide is {self._tide}")
 
             self.__bsync = False
 
@@ -239,7 +239,7 @@ class HTTPClient:
 
     async def __fn_eqk_handler(self, eqk_data: str, info_str_arr: list[str]) -> None:
         origin_lat = 30 + int(eqk_data[0:10], 2) / 100
-        origin_lon = 120 + int(eqk_data[10:20], 2) / 100
+        origin_lon = 124 + int(eqk_data[10:20], 2) / 100
         eqk_mag = int(eqk_data[20:27], 2) / 10
         eqk_depth = int(eqk_data[27:32], 2) / 10
         eqk_time = int(eqk_data[37:69], 2) * 1000
