@@ -1,10 +1,8 @@
-from time import time
+from dataclasses import InitVar, dataclass
 from datetime import datetime, timedelta
-from math import floor, ceil, sqrt, pow
-from dataclasses import dataclass, InitVar
+from math import ceil, floor, pow, sqrt
+from time import time
 from typing import Mapping
-
-from ..client.CONSTANT import TZ_MSEC
 
 
 @dataclass

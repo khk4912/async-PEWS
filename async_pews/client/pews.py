@@ -1,9 +1,8 @@
-from datetime import datetime, timedelta
-import logging
 import asyncio
-
+import logging
 from dataclasses import asdict
-from ..model.model import EarlyWarningInfo, EarthquakeEvent, EarthquakeInfo
+
+from ..model.model import EarlyWarningInfo, EarthquakeInfo
 from .client import HTTPClient
 
 

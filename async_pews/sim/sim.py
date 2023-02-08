@@ -2,8 +2,8 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 
-from ..client.CONSTANT import BIN_PATH
 from ..client.client import HTTPClient
+from ..client.CONSTANT import BIN_PATH
 from ..client.pews import PEWSClient
 
 

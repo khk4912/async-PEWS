@@ -1,8 +1,9 @@
 import asyncio
+import logging
 from datetime import datetime, timedelta
 from time import time
-import logging
 from urllib.parse import quote, unquote
+
 from aiohttp import ClientSession
 
 from ..exceptions.exceptions import HTTPStatusError
@@ -12,10 +13,10 @@ from .CONSTANT import (
     DELAY,
     MAX_EQK_INFO_LEN,
     MAX_EQK_STR_LEN,
+    RA,
+    SYNC_PERIOD,
     TIDE,
     TZ_MSEC,
-    SYNC_PERIOD,
-    RA,
 )
 from .utils import Utils
 
