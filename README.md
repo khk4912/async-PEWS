@@ -45,3 +45,16 @@ async def on_new_earthquake_info(event: EarthquakeInfo):
 
 pews.start()
 ```
+
+## Install
+
+```sh
+git clone https://github.com/khk4912/async-PEWS.git
+cd async-PEWS
+
+pip3 install .
+```
+
+## Example
+
+- [디스코드 봇 (discord.py)](https://github.com/khk4912/async-PEWS/blob/master/example/discord_bot.py)
