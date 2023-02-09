@@ -12,6 +12,7 @@ class PEWSClient:
         self.PEWSClient: HTTPClient = HTTPClient()
 
         self.__latest_eqk_time = 0
+        self.__last_phase = 1
         self.__setup_logger()
 
     def __setup_logger(self) -> None:
@@ -64,6 +65,7 @@ class PEWSClient:
                 if (
                     PEWSClient._eqk_event
                     and self.__latest_eqk_time != PEWSClient._eqk_event.time
+                    or (self.__last_phase == 2 and phase == 3)
                 ):
                     match PEWSClient._phase:
                         case 2:
@@ -96,6 +98,8 @@ class PEWSClient:
                         case 4:
                             self.__logger.debug("Event on_phase_4")
                             asyncio.create_task(self.on_phase_4())
+
+        self.__last_phase = phase
 
     async def on_new_early_warning(self, eqk_event: EarlyWarningInfo):
         ...

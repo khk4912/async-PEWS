@@ -1,6 +1,4 @@
-from .client.pews import PEWSClient
-
-from .sim.sim import SimulationPEWS
-from .sim.data import SimulationDataset
-
-from .model.model import EarthquakeEvent, EarlyWarningInfo
+from .client import PEWSClient
+from .sim import SimulationDataset, SimulationPEWS
+from .model import Station, EarthquakeInfo, EarlyWarningInfo
+from .exceptions import HTTPStatusError
