@@ -62,9 +62,8 @@ class PEWSClient:
                 asyncio.create_task(self.on_phase_1())
 
             case 2 | 3:
-                if (
-                    PEWSClient._eqk_event
-                    and self.__latest_eqk_time != PEWSClient._eqk_event.time
+                if PEWSClient._eqk_event and (
+                    self.__latest_eqk_time != PEWSClient._eqk_event.time
                     or (self.__last_phase == 2 and phase == 3)
                 ):
                     match PEWSClient._phase:
