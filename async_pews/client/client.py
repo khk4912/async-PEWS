@@ -179,6 +179,8 @@ class HTTPClient:
 
         if resp.status != 200:
             self.__logger.warn("Invaild HTTP status code received in __get_MMI")
+            return
+
         headers = resp.headers
 
         if self.__bsync:
