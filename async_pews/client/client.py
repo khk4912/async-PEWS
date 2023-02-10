@@ -139,7 +139,7 @@ class HTTPClient:
             sta_lon.append(120 + lon / 100)
 
         for i in range(len(sta_lat)):
-            sta_list.append(Station(sta_lat[i], sta_lon[i], i, -1))
+            sta_list.append(Station(sta_lat[i], sta_lon[i], i, 1))
 
         if len(sta_list) > 99:
             self._station_list = sta_list
