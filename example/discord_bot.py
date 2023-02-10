@@ -11,8 +11,8 @@ from async_pews import (
 
 pews = PEWSClient()
 
-CHANNEL_ID = 1
-TOKEN = ""
+CHANNEL_ID = 1  # 경고할 텍스트 채널 ID
+TOKEN = ""  # 봇의 토큰
 
 
 class EEWWarningBot(discord.Client):
