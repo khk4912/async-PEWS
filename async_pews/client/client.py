@@ -244,7 +244,7 @@ class HTTPClient:
         origin_lat = 30 + int(eqk_data[0:10], 2) / 100
         origin_lon = 124 + int(eqk_data[10:20], 2) / 100
         eqk_mag = int(eqk_data[20:27], 2) / 10
-        eqk_depth = int(eqk_data[27:32], 2) / 10
+        eqk_depth = int(eqk_data[27:37], 2) / 10
         eqk_time = int(eqk_data[37:69], 2) * 1000
         eqk_id = "20" + str(int(eqk_data[69:95], 2)) if eqk_data else None
         eqk_max = int(eqk_data[95:99], 2)
