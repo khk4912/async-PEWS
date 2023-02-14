@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from time import time
 from urllib.parse import quote, unquote
 
-from aiohttp import ClientSession
 
 from ..exceptions.exceptions import HTTPStatusError
 from ..model.model import EarthquakeEvent, Response, Station
@@ -18,31 +17,15 @@ from .CONSTANT import (
     TIDE,
     TZ_MSEC,
 )
+from .session import SessionClient
 from .utils import Utils
-
-
-class SessionManager:
-    def __init__(self) -> None:
-        self.__session: ClientSession | None = None
-
-    async def __aenter__(self) -> ClientSession:
-        self.__session = ClientSession()
-        return self.__session
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        assert self.__session
-        await self.__session.close()
-
-    @property
-    def session(self) -> ClientSession | None:
-        return self.__session
 
 
 class HTTPClient:
     def __init__(self, sim: bool = False) -> None:
 
         # Name Mangling
-        self.__session = SessionManager()
+        self.__client = SessionClient()
         self._tide = TIDE
         self.__delay = DELAY
         self.__HEADER_LEN = 1 if sim else 4
@@ -67,25 +50,13 @@ class HTTPClient:
             (self.__time - self._tide - TZ_MSEC) // 1000
         ).strftime("%Y%m%d%H%M%S")
 
-    async def _get(self, url: str) -> Response:
-        self.__logger.debug(f"Request to {url}")
-
-        async with self.__session as session:
-            async with session.get(url) as resp:
-                resp = Response(
-                    resp.status,
-                    await resp.read(),
-                    resp.headers,
-                )
-        return resp
-
     async def _get_sta(
         self, url: str | None = None, data_str: str | None = None
     ) -> None:
         url = url or BIN_PATH + f"{self.__pTime}.s"
 
         try:
-            resp = await self._get(url)
+            resp = await self.__client.get(url)
         except Exception as err:
             self.__logger.warn("Failed to get station data!")
             self.__logger.debug("Error: ", err)
@@ -119,9 +90,9 @@ class HTTPClient:
             self._bSync = True
 
     async def __sta_bin_handler(self, data: str) -> None:
-        sta_list = []
-        sta_lat = []
-        sta_lon = []
+        sta_list: list[Station] = []
+        sta_lat: list[float] = []
+        sta_lon: list[float] = []
 
         for i in range(0, len(data), 20):
 
@@ -135,7 +106,6 @@ class HTTPClient:
                 lon = 0
 
             sta_lat.append(30 + lat / 100)
-
             sta_lon.append(120 + lon / 100)
 
         for i in range(len(sta_lat)):
@@ -169,7 +139,7 @@ class HTTPClient:
         send_time = self.__time
 
         try:
-            resp = await self._get(url)
+            resp = await self.__client.get(url)
         except Exception as err:
             self.__logger.warn("Failed to get MMI data!")
             self.__logger.debug("Error: ", err)
