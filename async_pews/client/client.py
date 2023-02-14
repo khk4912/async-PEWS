@@ -6,7 +6,7 @@ from urllib.parse import quote, unquote
 
 
 from ..exceptions.exceptions import HTTPStatusError
-from ..model.model import EarthquakeEvent, Response, Station
+from ..model.model import EarthquakeEvent, Station
 from .CONSTANT import (
     BIN_PATH,
     DELAY,
@@ -30,11 +30,12 @@ class HTTPClient:
         self.__delay = DELAY
         self.__HEADER_LEN = 1 if sim else 4
         self.__bsync = True
+        self.__grid_renew = True
 
         self._phase = 1
         self._eqk_event: EarthquakeEvent | None = None
+        self._grid_arr: list[int] = []
         self._station_list: list[Station] = []
-
         self.__logger = logging.getLogger("async_pews")
 
     # def __del__(self) -> None:
@@ -181,10 +182,17 @@ class HTTPClient:
         if header[1] == header[2] == "0":
             if self._phase == 2 or self._phase == 3:
                 self._phase = 1
+                self.__grid_renew = True
+                self._grid_arr = []
+
         elif header[1] == "1" and header[2] == "0":
+            if self._phase != 2:
+                self.__grid_renew = True
             self._phase = 2
 
         elif header[1] == "1" and header[2] == "1":
+            if self._phase != 3:
+                self.__grid_renew = True
             self._phase = 3
 
         elif header[1] == "0" and header[2] == "1":
@@ -209,6 +217,9 @@ class HTTPClient:
 
             if self._eqk_event:
                 self._eqk_event.earthquake_id = eqk_id
+
+        if (self._phase == 2 or self._phase == 3) and self.__grid_renew:
+            await self.__get_grid()
 
     async def __fn_eqk_handler(self, eqk_data: str, info_str_arr: list[str]) -> None:
         origin_lat = 30 + int(eqk_data[0:10], 2) / 100
@@ -246,6 +257,28 @@ class HTTPClient:
             eqk_id,
             eqk_str,
         )
+
+    async def __get_grid(self, url: str | None = None) -> None:
+        assert self._eqk_event, "No earthquake event found!"
+
+        url = (
+            url
+            or BIN_PATH
+            + f"{self._eqk_event.earthquake_id}{'.e' if self._phase == 2 else '.i'}"
+        )
+
+        resp = await self.__client.get(url)
+
+        byte_array = list(resp.data)
+        grid_arr = []
+
+        for i in byte_array:
+            byte_str = Utils.lpad(bin(i)[2:], 8)
+            grid_arr.append(int(byte_str[0:4], 2))
+            grid_arr.append(int(byte_str[4:8], 2))
+
+        self._grid_arr = grid_arr
+        self.__grid_renew = False
 
     def __parse_eqk_id(self, eqk_data: str) -> str | None:
         return "20" + str(int(eqk_data[69:95], 2)) if eqk_data else None

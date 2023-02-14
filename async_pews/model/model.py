@@ -2,7 +2,11 @@ from dataclasses import InitVar, dataclass
 from datetime import datetime, timedelta
 from math import ceil, floor, pow, sqrt
 from time import time
-from typing import Mapping
+from typing import Mapping, TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from async_pews.client.client import HTTPClient
 
 
 @dataclass
@@ -90,7 +94,7 @@ class EarlyWarningInfo(EarthquakeEvent):
         추정 지진 위치 (ex. 제주 서귀포시 서남서쪽 32km 해역)
     """
 
-    _tide: InitVar[int]
+    _client: InitVar["HTTPClient"]
 
     def estimated_arrival_time(self, dest_lat: float, dest_lon: float) -> datetime:
         """
@@ -121,8 +125,52 @@ class EarlyWarningInfo(EarthquakeEvent):
 
         return datetime.now() + timedelta(seconds=sec)
 
-    def __post_init__(self, tide: int) -> None:
-        self.__tide = tide
+    def estimated_mmi(self, lat: float, lon: float) -> int:
+        """
+        입력한 위도와 경도 지점의 추정진도를 반환합니다.
+
+        Parameters
+        ----------
+        lat : float
+            위도
+        lon : float
+            경도
+
+        Returns
+        -------
+        int
+            추정 진도입니다.
+            진도를 알 수 없는 지점일 경우 -1이 반환됩니다.
+
+        Raises
+        ------
+        Exception
+            Grid 정보의 수신에 실패하여 진도를 알 수 없는 경우 발생하는 에러입니다.
+        """
+
+        mag = -1
+
+        if self.__client._grid_arr == []:
+            raise Exception("Grid data is not loaded yet.")
+
+        cnt = 0
+        for i in range(3885, 3300, -5):
+            for j in range(12450, 13205, 5):
+                if abs(lat - i / 100) < 0.025 and abs(lon - j / 100) < 0.025:
+                    mag = self.__client._grid_arr[cnt]
+
+                    if mag > 11:
+                        mag = 1
+
+                    return mag
+
+                cnt += 1
+
+        return mag
+
+    def __post_init__(self, client: "HTTPClient") -> None:
+        self.__client = client
+        self.__tide = client._tide
 
 
 @dataclass
@@ -154,4 +202,49 @@ class EarthquakeInfo(EarthquakeEvent):
         지진 위치 (ex. 제주 서귀포시 서남서쪽 32km 해역)
     """
 
-    ...
+    _client: InitVar["HTTPClient"]
+
+    def get_mmi(self, lat: float, lon: float) -> int:
+        """
+        입력한 위도와 경도 지점의 분석된 진도를 반환합니다.
+
+        Parameters
+        ----------
+        lat : float
+            위도
+        lon : float
+            경도
+
+        Returns
+        -------
+        int
+            해당 지역의 진도입니다.
+            진도를 알 수 없는 경우 -1이 반환됩니다.
+
+        Raises
+        ------
+        Exception
+            Grid 정보의 수신에 실패하여 진도를 알 수 없는 경우 발생하는 에러입니다.
+        """
+        mag = -1
+
+        if self.__client._grid_arr == []:
+            raise Exception("Grid data is not loaded yet.")
+
+        cnt = 0
+        for i in range(3885, 3300, -5):
+            for j in range(12450, 13205, 5):
+                if abs(lat - i / 100) < 0.025 and abs(lon - j / 100) < 0.025:
+                    mag = self.__client._grid_arr[cnt]
+
+                    if mag > 11:
+                        mag = 1
+
+                    return mag
+
+                cnt += 1
+
+        return mag
+
+    def __post_init__(self, client: "HTTPClient") -> None:
+        self.__client = client

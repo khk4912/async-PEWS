@@ -70,13 +70,15 @@ class PEWSClient:
                         case 2:
                             self.__logger.debug("Event on_new_early_warning")
                             eew_info = EarlyWarningInfo(
-                                **asdict(PEWSClient._eqk_event), _tide=PEWSClient._tide
+                                **asdict(PEWSClient._eqk_event), _client=PEWSClient
                             )
                             asyncio.create_task(self.on_new_early_warning(eew_info))
                             asyncio.create_task(self.on_phase_2(eew_info))
                         case 3:
                             self.__logger.debug("Event on_new_eqk_info")
-                            eqk_info = EarthquakeInfo(**asdict(PEWSClient._eqk_event))
+                            eqk_info = EarthquakeInfo(
+                                **asdict(PEWSClient._eqk_event), _client=PEWSClient
+                            )
                             asyncio.create_task(self.on_new_earthquake_info(eqk_info))
                             asyncio.create_task(self.on_phase_3(eqk_info))
 
@@ -87,12 +89,14 @@ class PEWSClient:
                         case 2:
                             self.__logger.debug("Event on_phase_2")
                             eew_info = EarlyWarningInfo(
-                                **asdict(PEWSClient._eqk_event), _tide=PEWSClient._tide
+                                **asdict(PEWSClient._eqk_event), _client=PEWSClient
                             )
                             asyncio.create_task(self.on_phase_2(eew_info))
                         case 3:
                             self.__logger.debug("Event on_phase_3")
-                            eqk_info = EarthquakeInfo(**asdict(PEWSClient._eqk_event))
+                            eqk_info = EarthquakeInfo(
+                                **asdict(PEWSClient._eqk_event), _client=PEWSClient
+                            )
                             asyncio.create_task(self.on_phase_3(eqk_info))
                         case 4:
                             self.__logger.debug("Event on_phase_4")
