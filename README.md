@@ -24,6 +24,11 @@
   - 포항 지진 (2017-11-15 14:29:31, 규모 5.4) -> `async_pews.SimulationDataset.POHANG`
   - 경주 지진 (2016-09-12 20:32:54, 규모 5.8) -> `async_pews.SimulationDataset.GYEONGJU`
 
+### TODO
+
+- ID 기반 다중 지진 핸들...?
+- 특정 상황에서 phase 이벤트가 발생하지 않는 문제 해결
+
 ## Usage
 
 ```py
