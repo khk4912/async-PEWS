@@ -2,6 +2,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from time import time
+from typing import Type
 from urllib.parse import quote, unquote
 
 
@@ -36,6 +37,8 @@ class HTTPClient:
         self._grid_arr: list[int] = []
         self._station_list: list[Station] = []
         self.__logger = logging.getLogger("async_pews")
+
+        self._ongoing_events: list[Type[EarthquakeEvent]] = []
 
     # def __del__(self) -> None:
     #     asyncio.run(self.__session.close())
