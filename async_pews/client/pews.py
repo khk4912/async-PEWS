@@ -98,9 +98,9 @@ class PEWSClient:
                                 **asdict(PEWSClient._eqk_event), _client=PEWSClient
                             )
                             asyncio.create_task(self.on_phase_3(eqk_info))
-                        case 4:
-                            self.__logger.debug("Event on_phase_4")
-                            asyncio.create_task(self.on_phase_4())
+            case 4:
+                self.__logger.debug("Event on_phase_4")
+                asyncio.create_task(self.on_phase_4())
 
         self.__last_phase = phase
 
