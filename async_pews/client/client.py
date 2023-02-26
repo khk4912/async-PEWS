@@ -23,7 +23,6 @@ from .utils import Utils
 
 class HTTPClient:
     def __init__(self, sim: bool = False) -> None:
-
         # Name Mangling
         self.__client = SessionClient()
         self._tide = TIDE
@@ -96,7 +95,6 @@ class HTTPClient:
         sta_lon: list[float] = []
 
         for i in range(0, len(data), 20):
-
             try:
                 lat = int(data[i : i + 10], 2)
             except:
@@ -180,7 +178,7 @@ class HTTPClient:
         staF = header[0] == "1"
 
         if header[1] == header[2] == "0":
-            if self._phase == 2 or self._phase == 3:
+            if self._phase == 2 or self._phase == 3 or self._phase == 4:
                 self._phase = 1
                 self.__grid_renew = True
                 self._grid_arr = []
