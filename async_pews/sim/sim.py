@@ -17,7 +17,7 @@ class SimulationPEWS(PEWSClient):
         self.__end_time = end_time - timedelta(hours=9)
         self.__logger = logging.getLogger("async_pews")
 
-    def increase_time(self):
+    def increase_time(self) -> None:
         self.__cur_time += timedelta(seconds=1)
 
     async def start(self) -> None:
