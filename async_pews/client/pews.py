@@ -10,6 +10,7 @@ from .client import HTTPClient
 class PEWSClient:
     def __init__(self) -> None:
         self.PEWSClient: HTTPClient = HTTPClient()
+        self.phase = 1  # default phase
 
         self.__latest_eqk_time = 0
         self.__last_phase = 1
@@ -54,9 +55,7 @@ class PEWSClient:
             asyncio.create_task(self.on_loop())
 
     def _phase_handler(self, PEWSClient: HTTPClient, phase: int) -> None:
-
         match phase:
-
             case 1:
                 self.__logger.debug("Event on_phase_1")
                 asyncio.create_task(self.on_phase_1())
