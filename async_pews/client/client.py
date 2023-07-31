@@ -194,7 +194,8 @@ class HTTPClient:
             self._phase = 3
 
         elif header[1] == "0" and header[2] == "1":
-            self._phase = 4
+            if self._phase != 4:
+                self._phase = 4
 
         info_str_arr = []
 
