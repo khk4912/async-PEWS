@@ -65,7 +65,7 @@ class HTTPClient:
         if resp.status != 200:
             raise HTTPStatusError(
                 resp.status,
-                "Invaild HTTP status code received in __get_sta",
+                "Invalid HTTP status code received in __get_sta",
             )
 
         data = resp.data
@@ -147,7 +147,7 @@ class HTTPClient:
         recv_time = self.__time
 
         if resp.status != 200:
-            self.__logger.warn("Invaild HTTP status code received in __get_MMI")
+            self.__logger.warn("Invalid HTTP status code received in __get_MMI")
             return
 
         headers = resp.headers
