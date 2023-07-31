@@ -178,7 +178,7 @@ class HTTPClient:
         staF = header[0] == "1"
 
         if header[1] == header[2] == "0":
-            if self._phase == 2 or self._phase == 3 or self._phase == 4:
+            if self._phase != 1:
                 self._phase = 1
                 self.__grid_renew = True
                 self._grid_arr = []
