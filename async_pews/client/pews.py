@@ -32,7 +32,9 @@ class PEWSClient:
             "on_new_early_warning",
             "on_new_earthquake_info",
         ]:
-            self.__logger.debug("Event name is not in the event list. Ignoring...")
+            self.__logger.debug(
+                f"Event name '{func.__name__}' is not in the event list. Ignoring..."
+            )
             return
 
         setattr(self, func.__name__, func)
