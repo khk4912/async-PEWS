@@ -10,7 +10,6 @@ class SessionClient:
         self.__logger = logging.getLogger("async_pews")
 
     async def get(self, url) -> Response:
-
         if not self.__session:
             self.__session = ClientSession()
             self.__logger.debug("New session created.")

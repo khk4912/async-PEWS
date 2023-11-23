@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from datetime import datetime, timedelta
 from time import time
@@ -31,6 +32,7 @@ class HTTPClient:
         self.__HEADER_LEN = 1 if sim else 4
         self.__bsync = True
         self.__grid_renew = True
+        self.__sim = sim
 
         self._phase = 1
         self._eqk_event: EarthquakeEvent | None = None
@@ -52,6 +54,24 @@ class HTTPClient:
         return datetime.fromtimestamp(
             (self.__time - self._tide - TZ_MSEC) // 1000
         ).strftime("%Y%m%d%H%M%S")
+
+    async def __get_location(self, eqk_id: str, phase: int) -> dict[str, str] | None:
+        if self.__sim:
+            url = BIN_PATH + f"{eqk_id}/"
+        else:
+            url = BIN_PATH
+
+        url += f"{eqk_id}.le" if phase == 2 else f"{eqk_id}.li"
+
+        try:
+            resp = await self.__client.get(url)
+        except Exception as err:
+            self.__logger.warn("Failed to get location data!")
+            self.__logger.debug("Error: ", err)
+            return
+
+        data = resp.data
+        return json.loads(data)
 
     async def _get_sta(
         self, url: str | None = None, data_str: str | None = None
@@ -239,13 +259,15 @@ class HTTPClient:
                 if _eqk_max_area_str[i] == "1":
                     eqk_max_area.append(RA.ko[i])
 
-        eqk_str = unquote(
-            quote(
-                "".join([chr(int(x)) for x in info_str_arr]),
-                encoding="raw_unicode_escape",
-            )
-        ).strip()
-        eqk_sea = eqk_str.find("해역") != -1
+        eqk_str = None
+        eqk_sea = False
+
+        if eqk_id is not None:
+            loc = await self.__get_location(eqk_id, self._phase)
+
+            if loc:
+                eqk_str = loc["info_ko"]
+                eqk_sea = eqk_str.find("해역") != -1
 
         self._eqk_event = EarthquakeEvent(
             origin_lat,
